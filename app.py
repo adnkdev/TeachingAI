@@ -63,8 +63,7 @@ def handle_userinput(user_question):
             st.write(bot_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
 
 def generate_topics():
-
-    response = st.session_state.questions({'question': "list the key topics and number each topic and ensure a space after each topic"})
+    response = st.session_state.questions({'question': "list the key topics in one sentence and number each topic and ensure a space after each topic"})
     st.write(response["answer"])
     return response["answer"]
 
@@ -79,6 +78,11 @@ def get_topics(topics):
         else:
             topic_list.append(curr_string)
             curr_string = ""
+
+    #removes empty list items
+    for topic in topic_list:
+        if topic == "":
+            topic_list.remove(topic)
 
     st.write(topic_list)
     return topic_list
@@ -102,8 +106,10 @@ def main():
         st.session_state.questions = None
 
     st.header("Generate exam questions from your learning material:books:")
-    #st.text_input("Ask a question:")
-    topics = generate_topics()
+    user_question = st.text_input("Ask a question:")
+    if user_question:
+        topics = generate_topics()
+        get_topics(topics)
 
 
 

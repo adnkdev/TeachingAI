@@ -12,9 +12,8 @@ from langchain.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 
-from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
-from langchain.llms import HuggingFaceHub
+
 
 from htmlTemplates import css,bot_template,user_template
 
@@ -67,6 +66,12 @@ def generate_topics():
     st.write(response["answer"])
     return response["answer"]
 
+def generate_questions(topic_list):
+
+    for topic in topic_list[:4]:
+        response = st.session_state.questions({'question': f"generate 2 one sentence short answer questions about {topic} and number each question and ensure a space after each question"})
+        st.write(response["answer"])
+
 
 def get_topics(topics):
 
@@ -109,7 +114,8 @@ def main():
     user_question = st.text_input("Ask a question:")
     if user_question:
         topics = generate_topics()
-        get_topics(topics)
+        topic_list = get_topics(topics)
+        generate_questions(topic_list)
 
 
 

@@ -13,6 +13,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 
 from langchain.chat_models import ChatOpenAI
+from openai import OpenAI
 
 
 from htmlTemplates import css,bot_template,user_template
@@ -63,14 +64,32 @@ def handle_userinput(user_question):
 
 def generate_topics():
     response = st.session_state.questions({'question': "list the key topics in one sentence and number each topic and ensure a space after each topic"})
-    st.write(response["answer"])
     return response["answer"]
 
-def generate_questions(topic_list):
+def generate_context(number):
 
-    for topic in topic_list[:4]:
-        response = st.session_state.questions({'question': f"generate 2 one sentence short answer questions about {topic} and number each question and ensure a space after each question"})
+    if int(number) > 0:
+        response = st.session_state.questions({'question': f"list information about {st.session_state.topic_list[int(number)-1]} in less than 300 tokens"})
         st.write(response["answer"])
+    else:
+        st.write("Error: please input correct number")
+
+
+
+def test():
+    client = OpenAI()
+    prompt = [{"role":"system", "content": "write a 100 word story about a white cat in a white house"}]
+    response = client.chat.completions.create(
+        model='gpt-3.5-turbo',
+        messages=prompt,
+        temperature=0.5,
+        max_tokens=1024
+    )
+
+    generated_text = response.choices[0].message.content
+    st.write(generated_text)
+
+
 
 
 def get_topics(topics):
@@ -89,12 +108,15 @@ def get_topics(topics):
         if topic == "":
             topic_list.remove(topic)
 
-    st.write(topic_list)
     return topic_list
 
 
+def display_topics():
 
-
+    if st.session_state.topic_list is not None:
+        for topic in st.session_state.topic_list:
+            st.write(bot_template.replace("{{MSG}}", topic), unsafe_allow_html=True)
+    return 1
 
 
 def main():
@@ -105,22 +127,28 @@ def main():
 
     #if "conversation" not in st.session_state:
         #st.session_state.conversation = None
-    #if "chat_history" not in st.session_state:
-        #st.session_state.chat_history = None
+    if "topic_list" not in st.session_state:
+        st.session_state.topic_list = None
     if "questions" not in st.session_state:
         st.session_state.questions = None
 
     st.header("Generate exam questions from your learning material:books:")
-    user_question = st.text_input("Ask a question:")
-    if user_question:
+    if st.button("Start"):
         topics = generate_topics()
-        topic_list = get_topics(topics)
-        generate_questions(topic_list)
+        st.session_state.topic_list = get_topics(topics)
 
+
+    display_topics()
+
+    number = st.text_input("Input the topic number")
+    if number:
+        generate_context(number)
+        # st.write(context_list)
+        # test()
 
 
     with st.sidebar:
-        st.subheader("Input google drive pdf")
+        st.subheader("Upload your pdf")
         pdf_docs = st.file_uploader("Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
         if st.button("Process"):
             #generates a loading spinner while processing pdf

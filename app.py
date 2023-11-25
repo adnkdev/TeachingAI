@@ -66,32 +66,6 @@ def generate_topics():
     response = st.session_state.questions({'question': "list the key topics in one sentence and number each topic and ensure a space after each topic"})
     return response["answer"]
 
-def generate_context(number):
-
-    if int(number) > 0:
-        response = st.session_state.questions({'question': f"list information about {st.session_state.topic_list[int(number)-1]} in less than 300 tokens"})
-        st.write(response["answer"])
-    else:
-        st.write("Error: please input correct number")
-
-
-
-def test():
-    client = OpenAI()
-    prompt = [{"role":"system", "content": "write a 100 word story about a white cat in a white house"}]
-    response = client.chat.completions.create(
-        model='gpt-3.5-turbo',
-        messages=prompt,
-        temperature=0.5,
-        max_tokens=1024
-    )
-
-    generated_text = response.choices[0].message.content
-    st.write(generated_text)
-
-
-
-
 def get_topics(topics):
 
     topic_list = []
@@ -118,6 +92,29 @@ def display_topics():
             st.write(bot_template.replace("{{MSG}}", topic), unsafe_allow_html=True)
     return 1
 
+def generate_context(number):
+
+    if int(number) > 0:
+        response = st.session_state.questions({'question': f"list information about {st.session_state.topic_list[int(number)-1]} in less than 300 tokens"})
+        st.write(response["answer"])
+        return response["answer"]
+    else:
+        st.write("Error: please input correct number")
+
+def generate_questions(context):
+    st.write(context)
+    client = OpenAI()
+    prompt = [{"role":"system", "content": f"Given {context}, generate 2 short answer questions and corresponding and ensure to number the questions and space between each question and answer pair"}]
+    response = client.chat.completions.create(
+        model='gpt-3.5-turbo',
+        messages=prompt,
+        temperature=0.5,
+        max_tokens=1024
+    )
+
+    generated_text = response.choices[0].message.content
+    st.write(generated_text)
+
 
 def main():
     load_dotenv()
@@ -137,14 +134,16 @@ def main():
         topics = generate_topics()
         st.session_state.topic_list = get_topics(topics)
 
-
     display_topics()
 
     number = st.text_input("Input the topic number")
     if number:
-        generate_context(number)
+        context = generate_context(number)
         # st.write(context_list)
-        # test()
+        generate_questions(context)
+
+
+
 
 
     with st.sidebar:
@@ -161,9 +160,6 @@ def main():
 
                 #create vector store
                 vectorstore = get_vectorstore(chunks)
-
-                #create conversation chain that is not re-intialised
-                #st.session_state.conversation = get_converstation_chain(vectorstore)
 
                 st.session_state.questions = get_conversation_chain(vectorstore)
 
